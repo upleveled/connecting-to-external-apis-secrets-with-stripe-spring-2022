@@ -1,24 +1,95 @@
+import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
 import Product from '../components/Product';
 import Subscription from '../components/Subscription';
 
-export default function Home() {
+export default function Home(props) {
+  const stripeLoader = loadStripe(props.publicKey);
+  console.log(props);
   const [productQuantity, setProductQuantity] = useState(1);
+
+  async function handlePurchase(quantity, mode, priceId) {
+    const stripeClient = await stripeLoader;
+
+    const response = await fetch('/api/session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        quantity: quantity,
+        mode: mode,
+        priceId: priceId,
+      }),
+    });
+
+    const data = await response.json();
+
+    stripeClient.redirectToCheckout({ sessionId: data.session.id });
+  }
+
   return (
     <div>
       <div>
         <Product
           productQuantity={productQuantity}
           setProductQuantity={setProductQuantity}
+          image={props.productPrices[0].image}
         />
         {/* fix this */}
-        <button>Buy for XX - FIX ME</button>
+        <button
+          onClick={() =>
+            handlePurchase(
+              productQuantity,
+              'payment',
+              props.productPrices[0].priceId,
+            )
+          }
+        >
+          Buy for $ {props.productPrices[0].amount * productQuantity}
+        </button>
       </div>
       <div>
-        <Subscription />
+        <Subscription image={props.productPrices[1].image} />
         {/* fix this */}
-        <button>Buy for XX - FIX ME</button>
+        <button
+          onClick={() =>
+            handlePurchase(1, 'subscription', props.productPrices[1].priceId)
+          }
+        >
+          Buy for $ {props.productPrices[1].amount}
+        </button>
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  const stripe = await import('stripe');
+  const stripeServer = stripe.default(process.env.STRIPE_SECRET_KEY);
+  const publicKey = process.env.STRIPE_PUBLISHABLE_KEY;
+
+  const price = await stripeServer.prices.retrieve(process.env.PRICE);
+  const product = await stripeServer.products.retrieve(price.product);
+
+  const price2 = await stripeServer.prices.retrieve(process.env.PRICE2);
+  const subscription = await stripeServer.products.retrieve(price2.product);
+
+  return {
+    props: {
+      publicKey: publicKey,
+      productPrices: [
+        {
+          priceId: process.env.PRICE,
+          amount: price.unit_amount / 100,
+          image: product.images[0],
+        },
+        {
+          priceId: process.env.PRICE2,
+          amount: price2.unit_amount / 100,
+          image: subscription.images[0],
+        },
+      ],
+    },
+  };
 }
