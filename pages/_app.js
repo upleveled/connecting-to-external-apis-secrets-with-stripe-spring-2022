@@ -1,9 +1,15 @@
-import { globalStyles } from '../shared/globalStyles';
+import { Global } from '@emotion/react';
+import Head from 'next/head';
+import myGlobalStyles from '../shared/globalStyles';
 
 function MyApp({ Component, pageProps }) {
   return (
     <>
-      {globalStyles}
+      <Global styles={myGlobalStyles} />
+      <Head>
+        <title>UpLeveled - stripe</title>
+        <link rel="icon" href="/images/logo.png" />
+      </Head>
       <header>
         <img src="/images/logo.svg" alt="UpLeveled" />
       </header>

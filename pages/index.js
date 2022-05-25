@@ -1,15 +1,14 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
+import stripe from 'stripe';
 import Product from '../components/Product';
 import Subscription from '../components/Subscription';
 
 export default function Home(props) {
-  const stripeLoader = loadStripe(props.publicKey);
-  console.log(props);
   const [productQuantity, setProductQuantity] = useState(1);
 
   async function handlePurchase(quantity, mode, priceId) {
-    const stripeClient = await stripeLoader;
+    const stripeClient = await loadStripe(props.publicKey);
 
     const response = await fetch('/api/session', {
       method: 'POST',
@@ -23,9 +22,9 @@ export default function Home(props) {
       }),
     });
 
-    const data = await response.json();
+    const { session } = await response.json();
 
-    stripeClient.redirectToCheckout({ sessionId: data.session.id });
+    stripeClient.redirectToCheckout({ sessionId: session.id });
   }
 
   return (
@@ -36,7 +35,6 @@ export default function Home(props) {
           setProductQuantity={setProductQuantity}
           image={props.productPrices[0].image}
         />
-        {/* fix this */}
         <button
           onClick={() =>
             handlePurchase(
@@ -51,7 +49,6 @@ export default function Home(props) {
       </div>
       <div>
         <Subscription image={props.productPrices[1].image} />
-        {/* fix this */}
         <button
           onClick={() =>
             handlePurchase(1, 'subscription', props.productPrices[1].priceId)
@@ -65,9 +62,7 @@ export default function Home(props) {
 }
 
 export async function getServerSideProps() {
-  const stripe = await import('stripe');
-  const stripeServer = stripe.default(process.env.STRIPE_SECRET_KEY);
-  const publicKey = process.env.STRIPE_PUBLISHABLE_KEY;
+  const stripeServer = stripe(process.env.STRIPE_SECRET_KEY);
 
   const price = await stripeServer.prices.retrieve(process.env.PRICE);
   const product = await stripeServer.products.retrieve(price.product);
@@ -77,7 +72,7 @@ export async function getServerSideProps() {
 
   return {
     props: {
-      publicKey: publicKey,
+      publicKey: process.env.STRIPE_PUBLISHABLE_KEY,
       productPrices: [
         {
           priceId: process.env.PRICE,

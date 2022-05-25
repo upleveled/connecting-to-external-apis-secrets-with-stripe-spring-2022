@@ -1,9 +1,9 @@
 // add api code here
-import Stripe from 'stripe';
+import stripe from 'stripe';
 
 // 1. connect with stripe
 // auth with stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripeServer = stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -18,11 +18,9 @@ export default async function handler(request, response) {
   const mode = request.body.mode;
   const priceId = request.body.priceId;
 
-  console.log(mode, quantity, priceId);
-
   // 3. request the creation of the session
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await stripeServer.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: mode,
     line_items: [{ price: priceId, quantity: quantity }],
@@ -32,6 +30,9 @@ export default async function handler(request, response) {
   });
 
   // 4. response the client with the new session
-  console.log(session);
+  if (!session) {
+    return response.status(400).json({ error: 'create session failed' });
+  }
+
   response.status(200).json({ session: session });
 }

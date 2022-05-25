@@ -1,5 +1,4 @@
-import { css, Global } from '@emotion/react';
-import Head from 'next/head';
+import { css } from '@emotion/react';
 
 const reset = css`
   html {
@@ -220,12 +219,4 @@ const myGlobalStyles = css`
   }
 `;
 
-export const globalStyles = (
-  <>
-    <Global styles={myGlobalStyles} />
-    <Head>
-      <title>UpLeveled - stripe</title>
-      <link rel="icon" href="/images/logo.png" />
-    </Head>
-  </>
-);
+export default myGlobalStyles;
