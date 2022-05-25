@@ -11,15 +11,17 @@ export default async function handler(request, response) {
   }
 
   // 2. get the required information for the purchase from the request
+
+  // Url to return on payment success
   const successUrl = 'http://localhost:3000/success';
+  // Url to return on payment cancel
   const cancelUrl = 'http://localhost:3000/canceled';
 
   const quantity = request.body.quantity;
   const mode = request.body.mode;
   const priceId = request.body.priceId;
 
-  // 3. request the creation of the session
-
+  // 3. create Checkout session
   const session = await stripeServer.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: mode,
@@ -34,5 +36,6 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: 'create session failed' });
   }
 
+  // 5. return Checkout session
   response.status(200).json({ session: session });
 }
